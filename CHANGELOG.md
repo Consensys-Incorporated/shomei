@@ -3,17 +3,13 @@
 ## 3.3.0 - 2026-11-20
 Java 25 is required for this shomei release.
 
-### Breaking Changes
-- Java 21 -> 25 (build target, CI and docker base image `openjdk-25`) [#195](https://github.com/Consensys/shomei/pull/195)
-
 ### Additions and Improvements
+- Java 21 -> 25 (build target, CI and docker base image `openjdk-25`) [#195](https://github.com/Consensys/shomei/pull/195)
 - upgrade to Besu 26.11.1 (from 26.2.0), Gradle 9.3.1, Vert.x 5 and Error Prone 2.53.0; the Besu BOM now provides the gnark version [#195](https://github.com/Consensys/shomei/pull/195)
 - move the Dockerfile to `docker/` [#195](https://github.com/Consensys/shomei/pull/195)
 
-### Bug Fixes
-- add `UseBASE64Intrinsics` to the default JVM flags to mitigate Java4Shell [#193](https://github.com/Consensys/shomei/pull/193)
-
 ### Security / CI
+- add `UseBASE64Intrinsics` to the default JVM flags to mitigate Java4Shell [#193](https://github.com/Consensys/shomei/pull/193)
 - pin GitHub Actions to commit SHAs [#194](https://github.com/Consensys/shomei/pull/194)
 - log in to Docker Hub with OIDC instead of a stored token [#196](https://github.com/Consensys/shomei/pull/196)
 
