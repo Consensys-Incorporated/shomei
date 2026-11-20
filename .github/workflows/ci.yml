@@ -120,10 +120,10 @@ jobs:
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
     environment: publish
+    # JReleaser skips the GitHub release and tag (build.gradle), so no write access is needed.
+    # No id-token here: only dockerPublish may request a Docker Hub OIDC token.
     permissions:
-      contents: write
-      id-token: write
-      packages: write    
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -247,8 +247,11 @@ jobs:
       - dockerTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    # Docker Hub trusts OIDC tokens from this environment only
+    environment: publish
     permissions:
       contents: read
+      id-token: write # Docker Hub OIDC login
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -278,9 +281,11 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         if: steps.docker-metadata.outputs.push == 'true'
+        env:
+          DOCKERHUB_OIDC_CONNECTIONID: ${{ vars.DOCKERHUB_OIDC_CONNECTIONID }}
+          DOCKERHUB_OIDC_EXPIREIN: 600 # the whole job takes about 3 minutes
         with:
-          username: ${{ secrets.DOCKER_USER_RW }}
-          password: ${{ secrets.DOCKER_PAT_RW }}
+          username: consensys
 
       - name: Build and push to registry
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -304,8 +309,7 @@ jobs:
       - unitTests
       - publishMavenCentral
       - dockerTests
-      - dockerPublish      
-    environment: publish
+      - dockerPublish
     permissions:
         contents: write
     runs-on: ubuntu-24.04
