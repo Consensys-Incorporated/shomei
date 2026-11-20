@@ -195,7 +195,7 @@ jobs:
         env:
           DOCKER_BUILD_SUMMARY: false
         with:
-          file: docker/openjdk-25/Dockerfile
+          file: docker/Dockerfile
           context: .
           build-args: |
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
@@ -292,7 +292,7 @@ jobs:
         if: steps.docker-metadata.outputs.push == 'true'
         with:
           platforms: linux/amd64,linux/arm64
-          file: docker/openjdk-25/Dockerfile
+          file: docker/Dockerfile
           context: .
           build-args: |
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
