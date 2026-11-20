@@ -91,9 +91,8 @@ public class GetRawTrieLogClient {
         .request(HttpMethod.POST, besuHttpPort, besuHttpHost, "/")
         .putHeader("Content-Type", APPLICATION_JSON)
         .timeout(TimeUnit.SECONDS.toMillis(30))
-        .sendJson(
-            jsonRpcRequest,
-            response -> {
+        .sendJson(jsonRpcRequest)
+            .onComplete(response -> {
               if (response.succeeded()) {
                 final GetRawTrieLogRpcResponse responseBody =
                     response.result().bodyAsJson(GetRawTrieLogRpcResponse.class);

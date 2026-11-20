@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM eclipse-temurin:21-jre-noble
+FROM eclipse-temurin:25-jre-noble
 ARG VERSION="dev"
 ARG BUILD_DATE
 ARG VCS_REF

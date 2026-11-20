@@ -132,9 +132,8 @@ public class Runner {
   }
 
   public void start() {
-    vertx.deployVerticle(
-        jsonRpcService,
-        res -> {
+    vertx.deployVerticle(jsonRpcService)
+        .onComplete(res -> {
           if (!res.succeeded()) {
             LOG.atError()
                 .setMessage("Error occurred when starting the JSON RPC service {}")
@@ -142,9 +141,8 @@ public class Runner {
                 .log();
           }
         });
-    vertx.deployVerticle(
-        fullSyncDownloader,
-        res -> {
+    vertx.deployVerticle(fullSyncDownloader)
+        .onComplete(res -> {
           if (!res.succeeded()) {
             LOG.atError()
                 .setMessage("Error occurred when starting the block downloader {}")
@@ -153,9 +151,8 @@ public class Runner {
           }
         });
     if (metricsService != null) {
-      vertx.deployVerticle(
-          metricsService,
-          res -> {
+      vertx.deployVerticle(metricsService)
+          .onComplete(res -> {
             if (!res.succeeded()) {
               LOG.atError()
                   .setMessage("Error occurred when starting the metrics service {}")

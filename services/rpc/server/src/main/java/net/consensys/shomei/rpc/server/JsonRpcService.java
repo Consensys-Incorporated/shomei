@@ -141,7 +141,8 @@ public class JsonRpcService extends AbstractVerticle {
 
       httpServer
           .requestHandler(buildRouter())
-          .listen(
+          .listen()
+          .onComplete(
               res -> {
                 if (!res.failed()) {
                   resultFuture.complete(null);
@@ -218,7 +219,8 @@ public class JsonRpcService extends AbstractVerticle {
     router
         .route()
         .handler(
-            CorsHandler.create(buildCorsRegexFromConfig())
+            CorsHandler.create()
+                .addOriginWithRegex(buildCorsRegexFromConfig())
                 .allowedHeader("*")
                 .allowedHeader("content-type"));
     router.route().handler(BodyHandler.create().setDeleteUploadedFilesOnEnd(true));
@@ -254,7 +256,7 @@ public class JsonRpcService extends AbstractVerticle {
             long duration = System.nanoTime() - start;
 
             // Parse the request body to get the method name
-            JsonObject requestBody = routingContext.getBodyAsJson();
+            JsonObject requestBody = routingContext.body().asJsonObject();
             String methodName = requestBody.getString("method");
 
             Timer.builder("http.request")
@@ -310,7 +312,7 @@ public class JsonRpcService extends AbstractVerticle {
     String hostname =
         event.request().getHeader(HttpHeaders.HOST) != null
             ? event.request().getHeader(HttpHeaders.HOST)
-            : event.request().host();
+            : String.valueOf(event.request().authority());
     final Iterable<String> splitHostHeader = Splitter.on(':').split(hostname);
     final long hostPieces = stream(splitHostHeader).count();
     if (hostPieces > 1) {

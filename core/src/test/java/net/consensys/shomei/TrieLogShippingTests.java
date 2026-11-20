@@ -38,7 +38,7 @@ import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.StorageSlotKey;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.hyperledger.besu.ethereum.trie.common.PmtStateTrieAccountValue;
+import org.hyperledger.besu.ethereum.trie.common.PatriciaTrieAccountValue;
 import org.junit.jupiter.api.Test;
 
 public class TrieLogShippingTests {
@@ -75,13 +75,13 @@ public class TrieLogShippingTests {
     Bytes32 topRootHashAfterUpdate = accountStateTrie.getTopRootHash();
 
     // Simulate TrieLogLayer from Besu before the update
-    org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer trieLogLayerBefore =
-        new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
+    org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer trieLogLayerBefore =
+        new org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer();
     Address contractAddress = Address.wrap(contract.getAddress().getOriginalUnsafeValue());
     trieLogLayerBefore.addAccountChange(
         contractAddress,
         null,
-        new PmtStateTrieAccountValue(
+        new PatriciaTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
             Hash.wrap(Bytes32.random()),
@@ -95,16 +95,16 @@ public class TrieLogShippingTests {
         slotValue.getOriginalUnsafeValue());
 
     // Simulate TrieLogLayer from Besu after the update
-    org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer trieLogLayerAfter =
-        new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
+    org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer trieLogLayerAfter =
+        new org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer();
     trieLogLayerAfter.addAccountChange(
         contractAddress,
-        new PmtStateTrieAccountValue(
+        new PatriciaTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
             Hash.wrap(Bytes32.random()),
             Hash.wrap(contract.keccakCodeHash.getOriginalUnsafeValue())),
-        new PmtStateTrieAccountValue(
+        new PatriciaTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
             Hash.wrap(Bytes32.random()),
@@ -169,12 +169,12 @@ public class TrieLogShippingTests {
     Address contractAddress2 = Address.wrap(contract.getAddress().getOriginalUnsafeValue());
 
     // Block 0: create the account with initial storage
-    org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer block0 =
-        new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
+    org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer block0 =
+        new org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer();
     block0.addAccountChange(
         contractAddress2,
         null,
-        new PmtStateTrieAccountValue(
+        new PatriciaTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
             Hash.wrap(Bytes32.random()),
@@ -190,8 +190,8 @@ public class TrieLogShippingTests {
     // Block 1: storage-only change — no account-level change, only a storage
     // read (old == new). This simulates the pattern from block 27470962 where an
     // account has SLOAD activity without nonce/balance changes.
-    org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer block1 =
-        new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
+    org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer block1 =
+        new org.hyperledger.besu.ethereum.trie.pathbased.bonsai.trielog.TrieLogLayer();
     block1.setBlockHash(Hash.wrap(Bytes32.random()));
     block1.setBlockNumber(1);
     block1.addStorageChange(

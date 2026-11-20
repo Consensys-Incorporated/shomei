@@ -8,7 +8,7 @@ export GOSS_OPTS="$GOSS_OPTS --format junit"
 export GOSS_FILES_STRATEGY=cp
 DOCKER_TEST_IMAGE="shomei_goss"
 DOCKER_IMAGE=$1
-DOCKER_FILE="${2:-$BASE_DIR/openjdk-21/Dockerfile}"
+DOCKER_FILE="${2:-$BASE_DIR/openjdk-25/Dockerfile}"
 
 # Create the reports directory if it doesn't exist
 mkdir -p "$REPORTS_DIR"

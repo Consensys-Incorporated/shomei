@@ -7,7 +7,7 @@ dependencyManagement {
   dependencies {
 
     // Error Prone
-    dependencySet(group: 'com.google.errorprone', version: '2.18.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.53.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -33,7 +33,6 @@ dependencyManagement {
     dependency 'ConsenSys:besu-shomei-plugin:0.7.5'
     dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.5'
 
-    dependency 'org.hyperledger.besu:gnark:1.4.1'
 
   }
 }

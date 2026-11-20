@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,8 +27,7 @@ import java.math.BigInteger;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -100,36 +98,7 @@ public class BesuSimulateClientTest {
     when(httpResponse.bodyAsJson(SimulateV1Response.class))
         .thenReturn(Json.decodeValue(responseJson, SimulateV1Response.class));
 
-    doAnswer(
-            invocation -> {
-              final Handler<AsyncResult<HttpResponse<Buffer>>> handler =
-                  invocation.getArgument(1);
-              handler.handle(
-                  new AsyncResult<>() {
-                    @Override
-                    public HttpResponse<Buffer> result() {
-                      return httpResponse;
-                    }
-
-                    @Override
-                    public Throwable cause() {
-                      return null;
-                    }
-
-                    @Override
-                    public boolean succeeded() {
-                      return true;
-                    }
-
-                    @Override
-                    public boolean failed() {
-                      return false;
-                    }
-                  });
-              return null;
-            })
-        .when(httpRequest)
-        .sendJson(any(), any(Handler.class));
+    when(httpRequest.sendJson(any())).thenReturn(Future.succeededFuture(httpResponse));
   }
 
   @Test
@@ -157,7 +126,7 @@ public class BesuSimulateClientTest {
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
-    verify(httpRequest).sendJson(any(), any());
+    verify(httpRequest).sendJson(any());
   }
 
   @Test
@@ -184,6 +153,6 @@ public class BesuSimulateClientTest {
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
-    verify(httpRequest).sendJson(any(), any());
+    verify(httpRequest).sendJson(any());
   }
 }
