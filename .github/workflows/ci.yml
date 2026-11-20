@@ -12,41 +12,26 @@ on:
 
 permissions: {} # lock everything by default (least-privilege)
 
+# Cancel superseded PR runs; never cancel main/tag runs (releases)
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  validate:
-    runs-on: ubuntu-24.04
-    env:
-      TAG_VERSION: "${{ inputs.tag }}"
-    steps:
-      - name: Pre-process Release Tag
-        id: validate_release_tag
-        run: |
-          # strip all whitespace
-          TAG_VERSION="${TAG_VERSION//[[:space:]]/}"
-          if [[ "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?(-.*)?$ ]]; then
-            echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT  # Set as output using the new syntax
-          fi
-    outputs:
-      tag_version: ${{ steps.validate_release_tag.outputs.tag_version }}
-
-
-  assemble:
+  build:
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: read
     env:
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
-      TAG_VERSION: ${{ needs.validate_release_tag.outputs.tag_version }}  # Use the output from the validate_release_tag step
-
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4
     outputs:
-      publish-version: ${{ steps.project-version.outputs.publish-version }}      
+      publish-version: ${{ steps.project-version.outputs.publish-version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-          fetch-tags: true
           persist-credentials: false
 
       - name: Setup Java and Gradle
@@ -60,49 +45,9 @@ jobs:
         id: project-version
         uses: Consensys/github-actions/java-get-project-version@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
 
-      - name: Assemble
-        run: ./gradlew --no-daemon clean compileJava compileTestJava assemble
-
-      - name: Upload workspace
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: workspace
-          retention-days: 1
-          path: |
-            ./
-            !./.git/**
-
-  unitTests:
-    needs: assemble
-    # 4 cpu, 16G ram
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    env:
-      architecture: amd64
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
-
-      - name: Setup Java and Gradle
-        id: setup-java-gradle
-        uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
-        with:
-          DISTRIBUTION: 'adopt'
-          VERSION: '25'
-
-      - name: Download workspace
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: workspace
-
+      # compiles, runs the unit tests and assembles the distributions
       - name: Build
-        run: ./gradlew --no-daemon build
+        run: ./gradlew build
 
       - name: Store distribution artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -114,11 +59,10 @@ jobs:
 
   publishMavenCentral:
     if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      - assemble
-      - unitTests
+    needs: build
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     environment: publish
     # JReleaser skips the GitHub release and tag (build.gradle), so no write access is needed.
     # No id-token here: only dockerPublish may request a Docker Hub OIDC token.
@@ -152,15 +96,15 @@ jobs:
           JRELEASER_NEXUS2_USERNAME: ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_NEXUS2_PASSWORD: ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}
           BUILD_RELEASE: true
-          TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
+          TAG_VERSION: ${{ needs.build.outputs.publish-version }}
         run: |
           ./gradlew clean assemble publish jreleaserFullRelease
+
   dockerTests:
-    needs:
-      - assemble
-      - unitTests
+    needs: build
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       security-events: write  # required for Trivy SARIF upload
@@ -168,12 +112,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-          fetch-tags: true
           persist-credentials: false
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -187,7 +126,7 @@ jobs:
         id: docker-metadata
         uses: Consensys/github-actions/java-docker-metadata@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
         with:
-          publish-version: ${{ needs.assemble.outputs.publish-version }}
+          publish-version: ${{ needs.build.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
 
       - name: Build and export to docker
@@ -198,17 +137,13 @@ jobs:
           file: docker/Dockerfile
           context: .
           build-args: |
-            TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
+            TAR_FILE=./build/distributions/shomei-${{ needs.build.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.assemble.outputs.publish-version }}
+            VERSION=${{ needs.build.outputs.publish-version }}
           no-cache: true
           load: true
           tags: consensys/linea-shomei:test
-
-      - name: Get absolute path of reports directory
-        id: get-reports-dir
-        run: echo "path=$(realpath ./build/reports)" >> $GITHUB_OUTPUT
 
       - name: Run Docker tests
         run: ./docker/test.sh 'consensys/linea-shomei:test' 
@@ -216,12 +151,16 @@ jobs:
       - name: Test Summary
         if: always()
         run: |
-          SUMMARY_CONTENT="<h2>Docker Test Summary</h2>\n"
-          SUMMARY_CONTENT+="<details><summary><strong>Details</strong></summary>\n"
-          SUMMARY_CONTENT+="<pre><code>\n"
-          SUMMARY_CONTENT+=$(cat ./docker/reports/*.xml)
-          SUMMARY_CONTENT+="\n</code></pre></details>\n"
-          echo -e "$SUMMARY_CONTENT" >> $GITHUB_STEP_SUMMARY  
+          {
+            echo "<h2>Docker Test Summary</h2>"
+            echo "<details><summary><strong>Details</strong></summary>"
+            echo "<pre><code>"
+            # escape the XML so it renders as text, and tolerate missing reports
+            cat ./docker/reports/*.xml 2>/dev/null \
+              | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+              || true
+            echo "</code></pre></details>"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run Trivy vulnerability scanner
         if: false  # TEMPORARY: Disabled due to Aqua Security breach — re-enable once resolved
@@ -242,13 +181,13 @@ jobs:
   dockerPublish:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
-      - assemble
-      - unitTests
+      - build
       - dockerTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
     # Docker Hub trusts OIDC tokens from this environment only
     environment: publish
+    timeout-minutes: 30
     permissions:
       contents: read
       id-token: write # Docker Hub OIDC login
@@ -256,8 +195,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-          fetch-tags: true
           persist-credentials: false
 
       - name: Set up QEMU
@@ -275,7 +212,7 @@ jobs:
         id: docker-metadata
         uses: Consensys/github-actions/java-docker-metadata@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
         with:
-          publish-version: ${{ needs.assemble.outputs.publish-version }}
+          publish-version: ${{ needs.build.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
 
       - name: Login to Docker Hub
@@ -295,24 +232,24 @@ jobs:
           file: docker/Dockerfile
           context: .
           build-args: |
-            TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
+            TAR_FILE=./build/distributions/shomei-${{ needs.build.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.assemble.outputs.publish-version }}
+            VERSION=${{ needs.build.outputs.publish-version }}
           push: ${{ steps.docker-metadata.outputs.push }}
           tags: ${{ steps.docker-metadata.outputs.tags }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
-      - assemble
-      - unitTests
+      - build
       - publishMavenCentral
       - dockerTests
       - dockerPublish
     permissions:
         contents: write
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -322,13 +259,13 @@ jobs:
       - name: Generate Checksum
         working-directory: ./build/distributions
         run: |
-          shasum -a 256 "shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz" > "shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz.sha256"
-          shasum -a 256 "shomei-${{ needs.assemble.outputs.publish-version }}.zip" > "shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256"
+          shasum -a 256 "shomei-${{ needs.build.outputs.publish-version }}.tar.gz" > "shomei-${{ needs.build.outputs.publish-version }}.tar.gz.sha256"
+          shasum -a 256 "shomei-${{ needs.build.outputs.publish-version }}.zip" > "shomei-${{ needs.build.outputs.publish-version }}.zip.sha256"
 
       - name: Determine Prerelease
         id: determine-prerelease
         run: |
-          if [[ "${{ needs.assemble.outputs.publish-version }}" == *-RC* ]]; then
+          if [[ "${{ needs.build.outputs.publish-version }}" == *-RC* ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -340,12 +277,12 @@ jobs:
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           files: |
-            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
-            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz.sha256
-            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip
-            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256
+            build/distributions/shomei-${{ needs.build.outputs.publish-version }}.tar.gz
+            build/distributions/shomei-${{ needs.build.outputs.publish-version }}.tar.gz.sha256
+            build/distributions/shomei-${{ needs.build.outputs.publish-version }}.zip
+            build/distributions/shomei-${{ needs.build.outputs.publish-version }}.zip.sha256
 
-          tag_name: ${{ needs.assemble.outputs.publish-version }}
+          tag_name: ${{ needs.build.outputs.publish-version }}
           body: |
             # Shomei Release
             ### Additions and Improvements
