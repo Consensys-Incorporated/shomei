@@ -42,7 +42,9 @@ application {
             // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
             "-XX:NativeMemoryTracking=summary",
             // 32Mb for Netty Direct ByteBuf
-            "-Dio.netty.maxDirectMemory=33554432"
+            "-Dio.netty.maxDirectMemory=33554432",
+            // Mitigation for CVE-2026-114938 (Java4Shell)
+            "-XX:-UseBASE64Intrinsics"
     ]
 }
 
