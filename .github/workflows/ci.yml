@@ -54,7 +54,7 @@ jobs:
         uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
         with:
           DISTRIBUTION: 'adopt'
-          VERSION: '21'
+          VERSION: '25'
 
       - name: Determine Shomei version
         id: project-version
@@ -94,7 +94,7 @@ jobs:
         uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
         with:
           DISTRIBUTION: 'adopt'
-          VERSION: '21'
+          VERSION: '25'
 
       - name: Download workspace
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -137,7 +137,7 @@ jobs:
         uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
         with:
           DISTRIBUTION: 'adopt'
-          VERSION: '21'
+          VERSION: '25'
 
       - name: Publish on maven central
         env:
@@ -195,7 +195,7 @@ jobs:
         env:
           DOCKER_BUILD_SUMMARY: false
         with:
-          file: docker/openjdk-21/Dockerfile
+          file: docker/Dockerfile
           context: .
           build-args: |
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
@@ -292,7 +292,7 @@ jobs:
         if: steps.docker-metadata.outputs.push == 'true'
         with:
           platforms: linux/amd64,linux/arm64
-          file: docker/openjdk-21/Dockerfile
+          file: docker/Dockerfile
           context: .
           build-args: |
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz

@@ -85,7 +85,7 @@ public class LineaGetProofTest {
 
   @Test
   public void shouldReturnErrorWhenBlockMissing() {
-    final JsonRpcRequestContext request = request("2");
+    final JsonRpcRequestContext request = request("0x2");
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null, RpcErrorType.INVALID_REQUEST, "BLOCK_MISSING_IN_CHAIN - block is missing");
@@ -103,7 +103,7 @@ public class LineaGetProofTest {
 
   @Test
   public void shouldReturnProofWithValidBlock() {
-    final JsonRpcRequestContext request = request("1");
+    final JsonRpcRequestContext request = request("0x1");
     final JsonRpcResponse response = method.response(request);
     assertThat(response).usingRecursiveComparison().isInstanceOf(JsonRpcSuccessResponse.class);
   }

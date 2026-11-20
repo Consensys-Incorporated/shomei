@@ -17,12 +17,12 @@ buildscript {
 }
 
 plugins {
-    id 'com.diffplug.spotless' version '6.25.0'
-    id 'com.github.ben-manes.versions' version '0.46.0'
-    id 'com.github.jk1.dependency-license-report' version '2.1'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'net.ltgt.errorprone' version '3.0.1' apply false
-    id 'org.jreleaser' version '1.16.0'
+    id 'com.diffplug.spotless' version '8.11.0'
+    id 'com.github.ben-manes.versions' version '0.67.0'
+    id 'com.github.jk1.dependency-license-report' version '3.1.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'net.ltgt.errorprone' version '5.2.0' apply false
+    id 'org.jreleaser' version '1.27.0'
     id 'java'
     id 'application'
 }
@@ -60,15 +60,14 @@ allprojects {
     java {
         withSourcesJar()
         withJavadocJar()
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
     test {
         // set a runtime shomei version for tests not executing from a jar
         systemProperty "shomei.version", project.version
         useJUnitPlatform()
     }
-
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
 
     repositories {
         maven {
@@ -170,6 +169,15 @@ allprojects {
             check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('DirectInvocationOnMock', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            // New stylistic checks in recent Error Prone versions
+            check('ArrayRecordComponent', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('PatternMatchingInstanceof', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('PreferThrowsTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('RefactorSwitch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UndefinedEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NonApiType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EffectivelyPrivate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('HashCodeInObjectsHash', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
             // We don't apply strict javadoc requirements yet
             check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
