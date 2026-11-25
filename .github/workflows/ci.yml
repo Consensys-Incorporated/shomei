@@ -38,7 +38,7 @@ jobs:
         id: setup-java-gradle
         uses: Consensys-Incorporated/github-actions/java-setup-gradle@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
-          DISTRIBUTION: 'adopt'
+          DISTRIBUTION: 'temurin'
           VERSION: '25'
 
       - name: Determine Shomei version
@@ -80,7 +80,7 @@ jobs:
         id: setup-java-gradle
         uses: Consensys-Incorporated/github-actions/java-setup-gradle@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
-          DISTRIBUTION: 'adopt'
+          DISTRIBUTION: 'temurin'
           VERSION: '25'
 
       - name: Publish on maven central
