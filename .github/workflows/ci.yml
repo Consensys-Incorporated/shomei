@@ -36,14 +36,14 @@ jobs:
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
-        uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
+        uses: Consensys-Incorporated/github-actions/java-setup-gradle@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
           DISTRIBUTION: 'adopt'
           VERSION: '25'
 
       - name: Determine Shomei version
         id: project-version
-        uses: Consensys/github-actions/java-get-project-version@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
+        uses: Consensys-Incorporated/github-actions/java-get-project-version@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
 
       # compiles, runs the unit tests and assembles the distributions
       - name: Build
@@ -78,7 +78,7 @@ jobs:
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
-        uses: Consensys/github-actions/java-setup-gradle@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
+        uses: Consensys-Incorporated/github-actions/java-setup-gradle@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
           DISTRIBUTION: 'adopt'
           VERSION: '25'
@@ -124,7 +124,7 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: Consensys/github-actions/java-docker-metadata@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
+        uses: Consensys-Incorporated/github-actions/java-docker-metadata@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
           publish-version: ${{ needs.build.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
@@ -210,7 +210,7 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: Consensys/github-actions/java-docker-metadata@1daaa118f66bacf74d8bcf5271fd9e210ce035ce # main
+        uses: Consensys-Incorporated/github-actions/java-docker-metadata@d7118b7e3733bac9a7f92f05f02f18c73892d5ad # 2.2.0
         with:
           publish-version: ${{ needs.build.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
